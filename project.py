@@ -4,6 +4,7 @@ import getpass
 import sys
 import os
 from datetime import datetime
+from decimal import Decimal
 
 # Color codes for terminal output
 class Colors:
@@ -171,13 +172,13 @@ def show_user_menu(db, user):
             "1. Apply for loan",
             "2. View my loans",
             "3. Make payment",
-            "4. Logout"
+            "X. Logout"
         ]
         
         # Add admin options if user is admin
         if user["is_admin"]:
-            options.insert(3, "5. Review Pending Loans")
-            options.insert(4, "6. Manage Users")
+            options.insert(3, "4. Review Pending Loans")
+            options.insert(4, "5. Manage Users")
         
         # Print all options
         for option in options:
@@ -191,11 +192,11 @@ def show_user_menu(db, user):
             view_loans(db, user)
         elif choice == "3":
             make_payment(db, user)
-        elif choice == "4":
+        elif choice == "x" or choice == "X":
             break
-        elif choice == "5" and user["is_admin"]:
+        elif choice == "4" and user["is_admin"]:
             review_pending_loans(db)
-        elif choice == "6" and user["is_admin"]:
+        elif choice == "5" and user["is_admin"]:
             manage_users(db)
         else:
             print_error("Invalid choice!")
@@ -245,11 +246,11 @@ def view_loans(db, user):
         )
         
         print(f"\n{Colors.BOLD}Loan ID: {loan[0]}{Colors.END}")
-        print(f"{Colors.CYAN}Amount: ${loan[1]:.2f}")
+        print(f"{Colors.CYAN}Amount: ${float(loan[1]):.2f}")
         print(f"Term: {loan[2]} months")
-        print(f"Interest Rate: {loan[3]:.2f}%")
+        print(f"Interest Rate: {float(loan[3]):.2f}%")
         print(f"Status: {status_color}{loan[4]}{Colors.END}")
-        print(f"Balance: ${loan[5]:.2f}")
+        print(f"Balance: ${float(loan[5]):.2f}")
         print(f"Date: {loan[6].strftime('%Y-%m-%d')}")
 
 def make_payment(db, user):
@@ -267,11 +268,11 @@ def make_payment(db, user):
     
     print(f"{Colors.CYAN}Your approved loans:{Colors.END}")
     for loan in approved_loans:
-        print(f"ID: {loan[0]} - Amount: ${loan[1]:.2f} - Balance: ${loan[2]:.2f}")
+        print(f"ID: {loan[0]} - Amount: ${float(loan[1]):.2f} - Balance: ${float(loan[2]):.2f}")
     
     try:
         loan_id = int(input(f"\n{Colors.CYAN}Enter loan ID to pay: {Colors.END}"))
-        amount = float(input(f"{Colors.CYAN}Payment amount ($): {Colors.END}"))
+        payment_amount = float(input(f"{Colors.CYAN}Payment amount ($): {Colors.END}"))
         
         selected_loan = None
         for loan in approved_loans:
@@ -283,23 +284,24 @@ def make_payment(db, user):
             print_error("Invalid loan ID!")
             return
         
-        if amount <= 0:
+        if payment_amount <= 0:
             print_error("Amount must be positive!")
             return
         
-        if amount > selected_loan[2]:
+        current_balance = float(selected_loan[2])
+        if payment_amount > current_balance:
             print_error("Payment exceeds loan balance!")
             return
         
-        new_balance = selected_loan[2] - amount
+        new_balance = current_balance - payment_amount
         db.execute(
             "UPDATE loans SET balance = %s WHERE id = %s",
-            (new_balance, loan_id)
+            (Decimal(str(new_balance)), loan_id)
         )
         
         db.execute(
             "INSERT INTO payments (loan_id, amount) VALUES (%s, %s)",
-            (loan_id, amount)
+            (loan_id, Decimal(str(payment_amount)))
         )
         
         if new_balance == 0:
@@ -330,7 +332,7 @@ def review_pending_loans(db):
     print(f"{Colors.CYAN}Pending Loans:{Colors.END}")
     for loan in loans:
         print(f"\nID: {loan[0]} | User: {loan[1]}")
-        print(f"Amount: ${loan[2]:.2f} | Term: {loan[3]} months")
+        print(f"Amount: ${float(loan[2]):.2f} | Term: {loan[3]} months")
         print(f"Applied: {loan[4].strftime('%Y-%m-%d')}")
     
     try:
