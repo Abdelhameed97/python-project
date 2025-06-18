@@ -2,4 +2,4 @@
 
 ## Demo Video
 
-https://github.com/user-attachments/assets/6224416a-f313-49a8-a3e4-3634fbf71218
+https://github.com/user-attachments/assets/c1e08f50-8133-4b92-bd98-46003151755f
